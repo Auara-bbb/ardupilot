@@ -345,6 +345,9 @@ void NavEKF2_core::FuseMagnetometer()
     ftype &R_MAG = mag_state.R_MAG;
     ftype *SH_MAG = &mag_state.SH_MAG[0];
     Vector24 H_MAG;
+    for (uint8_t i = 0; i < 24; i++) {
+        H_MAG[i] = 0.0f;
+    }
     Vector6 SK_MX;
     Vector6 SK_MY;
     Vector6 SK_MZ;
@@ -472,7 +475,6 @@ void NavEKF2_core::FuseMagnetometer()
             return;
         }
 
-        for (uint8_t i = 0; i<=stateIndexLim; i++) H_MAG[i] = 0.0f;
         H_MAG[1] = SH_MAG[6] - magD*SH_MAG[2] - magN*SH_MAG[5];
         H_MAG[2] = magE*SH_MAG[0] + magD*SH_MAG[3] - magN*(SH_MAG[8] - 2.0f*q1*q2);
         H_MAG[16] = SH_MAG[1];
@@ -542,7 +544,6 @@ void NavEKF2_core::FuseMagnetometer()
         hal.util->perf_begin(_perf_test[3]);
 
         // calculate observation jacobians
-        for (uint8_t i = 0; i<=stateIndexLim; i++) H_MAG[i] = 0.0f;
         H_MAG[0] = magD*SH_MAG[2] - SH_MAG[6] + magN*SH_MAG[5];
         H_MAG[2] = - magE*SH_MAG[4] - magD*SH_MAG[7] - magN*SH_MAG[1];
         H_MAG[16] = 2.0f*q1*q2 - SH_MAG[8];
@@ -607,7 +608,6 @@ void NavEKF2_core::FuseMagnetometer()
         hal.util->perf_begin(_perf_test[4]);
 
         // calculate observation jacobians
-        for (uint8_t i = 0; i<=stateIndexLim; i++) H_MAG[i] = 0.0f;
         H_MAG[0] = magN*(SH_MAG[8] - 2.0f*q1*q2) - magD*SH_MAG[3] - magE*SH_MAG[0];
         H_MAG[1] = magE*SH_MAG[4] + magD*SH_MAG[7] + magN*SH_MAG[1];
         H_MAG[16] = SH_MAG[5];
