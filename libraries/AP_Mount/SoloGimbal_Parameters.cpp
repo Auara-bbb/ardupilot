@@ -109,9 +109,16 @@ void SoloGimbal_Parameters::set_param(gmb_param_t param, float value) {
 
     _params[param].state = GMB_PARAMSTATE_ATTEMPTING_TO_SET;
     _params[param].value = value;
-    mavlink_msg_param_set_send(_chan, 0, MAV_COMP_ID_GIMBAL, get_param_name(param), _params[param].value, MAV_PARAM_TYPE_REAL32);
+    send_param(param);
 
     _last_request_ms = AP_HAL::millis();
+}
+
+void SoloGimbal_Parameters::send_param(gmb_param_t param)
+{
+    char param_id[MAVLINK_MSG_PARAM_SET_FIELD_PARAM_ID_LEN];
+    strncpy(param_id, get_param_name(param), sizeof(param_id));
+    mavlink_msg_param_set_send(_chan, 0, MAV_COMP_ID_GIMBAL, param_id, _params[param].value, MAV_PARAM_TYPE_REAL32);
 }
 
 void SoloGimbal_Parameters::update()
@@ -135,7 +142,7 @@ void SoloGimbal_Parameters::update()
     // retry param_set
     for(uint8_t i=0; i<MAVLINK_GIMBAL_NUM_TRACKED_PARAMS; i++) {
         if (_params[i].state == GMB_PARAMSTATE_ATTEMPTING_TO_SET && tnow_ms - _last_request_ms > _retry_period) {
-            mavlink_msg_param_set_send(_chan, 0, MAV_COMP_ID_GIMBAL, get_param_name((gmb_param_t)i), _params[i].value, MAV_PARAM_TYPE_REAL32);
+            send_param((gmb_param_t)i);
             if (!_params[i].seen) {
                 _params[i].fetch_attempts++;
             }

@@ -72,6 +72,7 @@ public:
 
 private:
     static const char* get_param_name(gmb_param_t param);
+    void send_param(gmb_param_t param);
 
     static const uint32_t _retry_period;
     static const uint8_t _max_fetch_attempts;
