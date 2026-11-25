@@ -834,6 +834,29 @@ private:
 
 };
 
+class ModeDrawStar : public Mode {
+public:
+    using Copter::Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return false; }
+    bool is_autopilot() const override { return true; }
+
+protected:
+    const char *name() const override { return "DRAWSTAR"; }
+    const char *name4() const override { return "DSTR"; }
+
+private:
+    static constexpr uint8_t vertex_count = 5;
+    Vector3f path[vertex_count + 2];
+    uint8_t path_num;
+
+    void generate_path();
+};
 
 class ModeGuidedNoGPS : public ModeGuided {
 
