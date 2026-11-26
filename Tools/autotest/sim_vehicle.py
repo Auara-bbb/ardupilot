@@ -142,7 +142,7 @@ def cygwin_pidof(proc_name):
     pipe = subprocess.Popen("ps -ea | grep " + proc_name,
                             shell=True,
                             stdout=subprocess.PIPE)
-    output_lines = pipe.stdout.read().replace("\r", "").split("\n")
+    output_lines = pipe.stdout.read().decode("utf-8", "replace").splitlines()
     ret = pipe.wait()
     pids = []
     if ret != 0:
@@ -312,9 +312,13 @@ def do_build_waf(opts, frame_options):
     root_dir = find_root_dir()
     os.chdir(root_dir)
 
-    waf_light = os.path.join(root_dir, "modules/waf/waf-light")
+    waf_override = os.environ.get("SITL_WAF")
+    if waf_override:
+        waf = [sys.executable, waf_override]
+    else:
+        waf = [os.path.join(root_dir, "modules/waf/waf-light")]
 
-    cmd_configure = [waf_light, "configure", "--board", "sitl"]
+    cmd_configure = waf + ["configure", "--board", "sitl"]
     if opts.debug:
         cmd_configure.append("--debug")
 
@@ -325,12 +329,15 @@ def do_build_waf(opts, frame_options):
     for piece in pieces:
         cmd_configure.extend(piece)
 
+    if opts.waf_build_dir is not None:
+        cmd_configure.append("--out=" + opts.waf_build_dir)
+
     run_cmd_blocking("Configure waf", cmd_configure, check=True)
 
     if opts.clean:
-        run_cmd_blocking("Building clean", [waf_light, "clean"])
+        run_cmd_blocking("Building clean", waf + ["clean"])
 
-    cmd_build = [waf_light, "build", "--target", frame_options["waf_target"]]
+    cmd_build = waf + ["build", "--target", frame_options["waf_target"]]
     if opts.jobs is not None:
         cmd_build += ['-j', str(opts.jobs)]
     pieces = [shlex.split(x) for x in opts.waf_build_args]
@@ -342,7 +349,7 @@ def do_build_waf(opts, frame_options):
     if sts != 0:  # build failed
         if opts.rebuild_on_failure:
             progress("Build failed; cleaning and rebuilding")
-            run_cmd_blocking("Building clean", [waf_light, "clean"])
+            run_cmd_blocking("Building clean", waf + ["clean"])
 
             _, sts = run_cmd_blocking("Building", cmd_build)
             if sts != 0:
@@ -782,6 +789,8 @@ group_build.add_option("", "--waf-build-arg",
                        type="string",
                        default=[],
                        help="extra arguments to pass to waf in its build step")
+group_build.add_option("", "--waf-build-dir",
+                       help="Waf output directory for building and running SITL")
 parser.add_option_group(group_build)
 
 group_sim = optparse.OptionGroup(parser, "Simulation options")
@@ -911,6 +920,8 @@ group.add_option("", "--aircraft",
 parser.add_option_group(group)
 
 cmd_opts, cmd_args = parser.parse_args()
+if cmd_opts.waf_build_dir is not None:
+    cmd_opts.waf_build_dir = os.path.abspath(cmd_opts.waf_build_dir)
 
 # clean up processes at exit:
 atexit.register(kill_tasks)
@@ -1038,10 +1049,8 @@ else:
         do_build_parameters(cmd_opts.vehicle)
 
     if cmd_opts.build_system == "waf":
-        binary_basedir = "build/sitl"
-        vehicle_binary = os.path.join(find_root_dir(),
-                                      binary_basedir,
-                                      frame_infos["waf_target"])
+        output_dir = cmd_opts.waf_build_dir or os.path.join(find_root_dir(), "build")
+        vehicle_binary = os.path.join(output_dir, "sitl", frame_infos["waf_target"])
     else:
         vehicle_binary = os.path.join(vehicle_dir, cmd_opts.vehicle + ".elf")
 

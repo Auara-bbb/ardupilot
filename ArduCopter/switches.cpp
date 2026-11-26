@@ -140,14 +140,19 @@ bool Copter::read_3pos_switch(uint8_t chan, uint8_t &ret) const
     return true;
 }
 
+// For recording, debounce the sampled position and dispatch a valid low even at startup.
 // can't take reference to a bitfield member, thus a #define:
 #define read_aux_switch(chan, flag, option)                         \
     do {                                                            \
         if (read_3pos_switch(chan, switch_position)) {              \
-            if (debounce_aux_switch(chan, flag) && flag != switch_position) { \
+            const bool record_return_point = (option == AUXSW_USER_FUNC1); \
+            const uint8_t debounce_position = record_return_point ? switch_position : flag; \
+            const bool changed = (flag != switch_position);         \
+            const bool record_switch_low = record_return_point && (switch_position == AUX_SWITCH_LOW); \
+            if (debounce_aux_switch(chan, debounce_position) && (changed || record_switch_low)) { \
                 flag = switch_position;                             \
                 do_aux_switch_function(option, flag);               \
-                need_log = true;                                    \
+                need_log |= changed;                                \
             }                                                       \
         }                                                           \
     } while (false)

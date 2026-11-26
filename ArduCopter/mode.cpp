@@ -235,6 +235,13 @@ bool Copter::set_mode(control_mode_t mode, mode_reason_t reason)
     // update notify object
     notify_flight_mode();
 
+#if defined(USERHOOK_AUXSWITCH) && MODE_GUIDED_ENABLED == ENABLED
+    manual_return_remaining = 0;
+    if (mode == GUIDED) {
+        start_manual_return();
+    }
+#endif
+
     // return success
     return true;
 }
@@ -249,6 +256,10 @@ void Copter::update_flight_mode()
     target_rangefinder_alt_used = false;
 
     flightmode->run();
+
+#if defined(USERHOOK_AUXSWITCH) && MODE_GUIDED_ENABLED == ENABLED
+    update_manual_return();
+#endif
 }
 
 // exit_mode - high level call to organise cleanup as a flight mode is exited

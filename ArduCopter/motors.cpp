@@ -280,6 +280,11 @@ void Copter::init_disarm_motors()
     // send disarm command to motors
     motors->armed(false);
 
+#if defined(USERHOOK_AUXSWITCH) && MODE_GUIDED_ENABLED == ENABLED
+    manual_return_count = 0;
+    manual_return_remaining = 0;
+#endif
+
 #if MODE_AUTO_ENABLED == ENABLED
     // reset the mission
     mission.reset();

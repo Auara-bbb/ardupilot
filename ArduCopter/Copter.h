@@ -943,6 +943,18 @@ private:
     void userhook_auxSwitch2(uint8_t ch_flag);
     void userhook_auxSwitch3(uint8_t ch_flag);
 
+#if defined(USERHOOK_AUXSWITCH) && MODE_GUIDED_ENABLED == ENABLED
+    static constexpr uint8_t MANUAL_RETURN_MAX_POINTS = 20;
+    Location_Class manual_return_points[MANUAL_RETURN_MAX_POINTS];
+    uint8_t manual_return_count = 0;
+    uint8_t manual_return_remaining = 0; // one-based index of the active target, or zero when idle
+    bool manual_return_switch_low = false;
+
+    void start_manual_return();
+    void update_manual_return();
+    void set_manual_return_target(uint8_t remaining);
+#endif
+
 #include "mode.h"
 
     Mode *flightmode;

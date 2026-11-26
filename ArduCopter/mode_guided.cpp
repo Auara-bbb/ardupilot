@@ -198,6 +198,9 @@ bool Copter::ModeGuided::set_destination(const Vector3f& destination, bool use_y
     // no need to check return status because terrain data is not used
     wp_nav->set_wp_destination(destination, false);
 
+#if defined(USERHOOK_AUXSWITCH) && MODE_GUIDED_ENABLED == ENABLED
+    copter.manual_return_remaining = 0;
+#endif
     // log target
     copter.Log_Write_GuidedTarget(guided_mode, destination, Vector3f());
     return true;
@@ -241,6 +244,9 @@ bool Copter::ModeGuided::set_destination(const Location_Class& dest_loc, bool us
     // set yaw state
     set_yaw_state(use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw);
 
+#if defined(USERHOOK_AUXSWITCH) && MODE_GUIDED_ENABLED == ENABLED
+    copter.manual_return_remaining = 0;
+#endif
     // log target
     copter.Log_Write_GuidedTarget(guided_mode, Vector3f(dest_loc.lat, dest_loc.lng, dest_loc.alt),Vector3f());
     return true;
